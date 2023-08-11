@@ -1,4 +1,4 @@
-use std::ptr:: NonNull;         
+use std::ptr::NonNull;         
 use std::alloc::{self, Layout};
 use std::mem;
 
@@ -7,9 +7,9 @@ use std::mem;
 
 
 #[derive(Debug)]
- pub struct Storage {
+ pub struct Storage<T> {
 
-    data: *mut u8,  
+    data: NonNull<T>,  
     capacity: usize 
    
 }
@@ -18,7 +18,7 @@ use std::mem;
 impl<T> Storage<T>{
 
     pub const fn new() -> Self {
-        Self { ptr: NonNull::<T>::dangling(), capacity: 0 }
+        Self { data: NonNull::<T>::dangling(), capacity: 0 }
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
@@ -26,12 +26,12 @@ impl<T> Storage<T>{
     }
 
     pub unsafe fn from_raw_parts(ptr: *mut T, capacity: usize) -> Self {
-        Self { ptr: unsafe { NonNull::new_unchecked(ptr) }, capacity: capacity }
+        Self { data: unsafe { NonNull::new_unchecked(ptr) }, capacity: capacity }
     }
 
 
     pub fn copy_from(&self, source : *const T, size: usize){
-        let dest_pointer = self.ptr.as_ptr()
+        let dest_pointer = self.data.as_ptr();
         unsafe {std::ptr::copy(source, dest_pointer, size)};
 
 
@@ -41,27 +41,28 @@ impl<T> Storage<T>{
   
     pub fn copy_to(&self) -> Self{
         
-        let layout = Layout::array::<T>(self.cap_bytes).unwrap();
+        let layout = Layout::array::<T>(self.capacity).unwrap();
         let result = unsafe{alloc::alloc(layout) };
 
         let copy_inst = Storage {
-                ptr: unsafe { NonNull::new_unchecked(result as *mut T) },
-                cap_bytes: self.capacity,
-            }
+            data: unsafe { NonNull::new_unchecked(result as *mut T) },
+            capacity: self.capacity,
+            };
+            copy_inst
 
         }
 
 
 
-    }
+    
     fn allocate(capacity: usize) -> Self {
       
         let layout = Layout::array::<T>(capacity).unwrap();
         let result = unsafe{alloc::alloc(layout) };
             
         Self {
-                ptr: unsafe { NonNull::new_unchecked(result as *mut T) },
-                cap_bytes: capacity,
+                data: unsafe { NonNull::new_unchecked(result as *mut T) },
+                capacity: capacity,
             }
         }
     
@@ -70,7 +71,7 @@ impl<T> Storage<T>{
         let new_layout = Layout::array::<T>(self.capacity).unwrap();
         let new_ptr =  unsafe{alloc::alloc(new_layout)};
             
-        self.ptr = match NonNull::new(new_ptr as *mut T) {
+        self.data = match NonNull::new(new_ptr as *mut T) {
                                     Some(p) => p,
                                     None => alloc::handle_alloc_error(new_layout),
                                 };  
@@ -79,13 +80,13 @@ impl<T> Storage<T>{
 
   
     pub fn grow_mul(&mut self, mul: usize) {
-        self.cap_bytes *= mul;
-        let new_layout = Layout::array::<T>(self.cap_bytes).unwrap();
-        let new_ptr = if self.cap_bytes==0 {
+        self.capacity *= mul;
+        let new_layout = Layout::array::<T>(self.capacity).unwrap();
+        let new_ptr = if self.capacity==0 {
             unsafe{alloc::alloc(new_layout)}
                                     } else {unsafe{alloc::alloc(new_layout)}};
                 
-        self.ptr = match NonNull::new(new_ptr as *mut T) {
+        self.data = match NonNull::new(new_ptr as *mut T) {
                                         Some(p) => p,
                                         None => alloc::handle_alloc_error(new_layout),
                                     };  
@@ -94,35 +95,37 @@ impl<T> Storage<T>{
 
 
     pub fn grow(&mut self){
-        let (new_cap, new_layout) = if self.cap_bytes ==0{ (1, Layout::array::<T>(1).unwrap())} else {
-            let new_c = 2 * self.cap_bytes;
+        let (new_cap, new_layout) = if self.capacity ==0{ (1, Layout::array::<T>(1).unwrap())} else {
+            let new_c = 2 * self.capacity;
             let new_l = Layout::array::<T>(new_c).unwrap();
             (new_c, new_l)
 
         };
         
-        let new_ptr = if self.cap_bytes==0 {
+        let new_ptr = if self.capacity==0 {
             unsafe{alloc::alloc(new_layout)}
                                     } else {unsafe{alloc::alloc(new_layout)}};
                 
-        self.ptr = match NonNull::new(new_ptr as *mut T) {
+        self.data = match NonNull::new(new_ptr as *mut T) {
                                         Some(p) => p,
                                         None => alloc::handle_alloc_error(new_layout),
                                     };                           
-        self.cap_bytes = new_cap;
+        self.capacity = new_cap;
     }
 
 
     
 
     pub fn capacity(&self) -> usize {
-         self.cap_bytes 
+         self.capacity 
     }
 
-    pub fn data_ptr(&self) -> *mut u8 {
-        self.data
+    pub fn data_ptr(&self) -> *mut T {
+        self.data.as_ptr()
     }
 
-  
 }
 
+fn main(){
+
+}
