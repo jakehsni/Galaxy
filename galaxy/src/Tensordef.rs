@@ -27,6 +27,44 @@ struct Tensor{
 impl Tensor{
 
 
+
+    fn tensor_slice(&self, index_slice: &[std::ops::Range<usize>]) -> Tensor {
+        let mut ind = 0;
+        let mut start_pos = 0;
+        let mut strides :Vec<usize> = Vec::new();
+        let mut dimensions :Vec<usize> = Vec::new();
+        for i in index_slice{
+
+            if (i.start==0 && i.end==0){
+                start_pos += self.strides[ind] * i.start;
+            dimensions.push(self.dimensions[ind]);}
+            else{
+            dimensions.push(i.end - i.start);}
+            strides.push(self.strides[ind]);
+            
+            ind+=1; 
+        }
+            self.viewcnt +=1;
+        let new_ptr = unsafe {self.data.add(start_pos)};
+
+        
+        tensor{
+            data : new_ptr,
+            start_pos : start_pos,
+            strides : strides,
+            dimensions: dimensions,
+            ndim: self.dimensions.len(),
+            viewcnt : self.viewcnt,
+            is_contiguos : true,
+            op : usize,
+            orginal: false,
+            offset: start_pos,
+            numel: usize }
+            
+        }
+
+
+
 fn data(&self) -> *mut u8 {
     self.storage.data_ptr()
 }
