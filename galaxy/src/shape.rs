@@ -11,14 +11,5 @@ for idim in 0..ndim{
 }
 
 
- 
+ }
 
-}
-
-fn stride_from_shape(dimension: &[usize]) -> Vec<usize>{
-
-    let mut strides : Vec<usize> = dimension.iter().rev().scan(1,|s, &x|{*s = *s * x; Some(*s)}).collect();
-    strides.reverse();
-strides;
-
-}

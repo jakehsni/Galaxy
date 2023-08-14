@@ -10,7 +10,7 @@ use std::mem;
  pub struct Storage<T> {
     /* Pointer to the raw data buffer */
     data: NonNull<T>, 
-    capacity: usize 
+   pub capacity: usize 
    
 }
 

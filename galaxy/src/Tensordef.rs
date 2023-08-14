@@ -11,7 +11,7 @@ use buffer::Buffer;
 struct Tensor{
     data : Buffer,
     strides : Vec<usize>,
-    dimensions :  Vec<usize>,
+    shape :  Vec<usize>,
     viewcnt : usize,
     is_contiguos : bool,
     op : usize,
@@ -26,6 +26,41 @@ struct Tensor{
 
 impl Tensor{
 
+
+    fn is_contiguos(&self) -> bool{
+        let shape = &self.shape;
+        let strides = &self.strides;
+        let  check = shape
+            .iter()
+            .rev()
+            .scan(1,|state, x|{let cur_state = *state;*state = *state *  *x;return Some(cur_state)})
+            .zip(strides.iter().rev())
+            .all(|(x1, &x2)| x1 == x2);
+
+            check
+    }
+
+
+    fn stride_from_shape(shape: &[usize]) -> Vec<usize>{
+       
+        let  stride: Vec<usize> = shape
+            .iter()
+            .rev()
+            .scan(1,|state, x|{let cur_state = *state;*state = *state *  *x;return Some(cur_state)}).collect();
+
+            stride
+        }
+
+
+    fn view(&mut self, shape : &[usize]){
+
+        let is_contiguos = self::is_contiguos();
+        if is_contiguos {
+            self.shape  = 
+            self.strides  = Self::stride_from_shape(shape);
+            tensor{}
+        }
+    }
 
 
     fn tensor_slice(&self, index_slice: &[std::ops::Range<usize>]) -> Tensor {
@@ -65,9 +100,9 @@ impl Tensor{
 
 
 
-fn data(&self) -> *mut u8 {
-    self.storage.data_ptr()
-}
+    fn data(&self) -> *mut u8 {
+        self.storage.data_ptr()
+    }
 //=======add
 fn add_tensor(&self, other : &Tensor) -> Self {
 if (self.size != other.size){
@@ -193,24 +228,18 @@ fn mul_inplace_tensor(&mut self, other : &Tensor) -> Self {
 
 
    
-   fn get(&self) -> *mut usize{
-    &self.ndim as *const usize  as *mut usize
-}
+
    
 
 }
 
-fn print_type_of<T>(_: &T) { 
-    println!("{}", std::any::type_name::<T>())
-     }
-
+\
 fn main(){
   
     
    
 
 let mut v = vec![1,2,3];
-print_type_of(&v);
 let ptr  = v.as_mut_ptr() ;
 
 let  t  =  Tensor{
